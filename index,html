@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base href="https://websim.createwebapps.com/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Data Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #2b2d42;
+            --background-color: #edf2f4;
+            --text-color: #3a3a3a;
+            --hover-color: #5a5e93;
+            --card-background: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding-bottom: 76px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar {
+            background-color: var(--secondary-color);
+            min-height: 100vh;
+            padding-top: 20px;
+        }
+
+        .sidebar a {
+            color: #ffffff;
+            padding: 12px 20px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: var(--hover-color);
+            transform: scale(1.05);
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .mobile-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--secondary-color);
+            display: none;
+            z-index: 1000;
+            height: 56px;
+        }
+
+        .mobile-navbar a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex: 1;
+            height: 100%;
+        }
+
+        .mobile-navbar a i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .mobile-navbar a.active {
+            background-color: var(--primary-color);
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .customer-card {
+            background-color: var(--card-background);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .customer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .customer-card h5 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .customer-card p {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .customer-card strong {
+            color: var(--secondary-color);
+        }
+
+        .floating-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1050;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .floating-message.show {
+            opacity: 1;
+        }
+
+        .confirmation-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1100;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .confirmation-dialog.show {
+            display: block;
+        }
+
+        .confirmation-dialog h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+
+        .confirmation-dialog .btn-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .confirmation-dialog .btn-container button {
+            margin-left: 10px;
+        }
+
+        @media (max-width: 767.98px) {
+            .sidebar {
+                display: none;
+            }
+            .mobile-navbar {
+                display: flex;
+            }
+            body {
+                padding-bottom: 76px;
+            }
+            .customer-card {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky">
+                    <h3 class="text-white text-center mb-4">Dashboard</h3>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#home">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#masterList">
+                                <i class="fas fa-list"></i> MASTER LIST
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#about">
+                                <i class="fas fa-info-circle"></i> About
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div id="content" class="main-content">
+                    <!-- Content will be dynamically loaded here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navbar -->
+    <nav class="mobile-navbar">
+        <a href="#home" class="active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#masterList">
+            <i class="fas fa-list"></i>
+            <span>MASTER LIST</span>
+        </a>
+        <a href="#about">
+            <i class="fas fa-info-circle"></i>
+            <span>About</span>
+        </a>
+    </nav>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Floating Message -->
+    <div id="floatingMessage" class="floating-message"></div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmationDialog" class="confirmation-dialog">
+        <h3>Confirm Deletion</h3>
+        <p>Are you sure you want to delete all data for <span id="confirmationYear"></span>?</p>
+        <div class="btn-container">
+            <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+            <button id="confirmDelete" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+
+    <script>
+        const customerData = {
+            'MASTER LIST': []
+        };
+
+        const columns = [
+            "SR NO", "ACCOUNT NO", "NAME", "DENOMINATION", "PAID UPTO", "DUE DATE", "OPENED ON",
+            "MATURITY DATE", "TOTAL", "GUARDIAN", "ADDRESS", "ASLAAS No", "CIF N", "CODE"
+        ];
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showFloatingMessage(message, duration = 3000) {
+            const floatingMessage = document.getElementById('floatingMessage');
+            floatingMessage.textContent = message;
+            floatingMessage.classList.add('show');
+            setTimeout(() => {
+                floatingMessage.classList.remove('show');
+            }, duration);
+        }
+
+        function loadContent(section) {
+            const content = document.getElementById('content');
+            content.innerHTML = '';
+            content.classList.remove('fade-in');
+
+            let html = '';
+
+            switch(section) {
+                case 'home':
+                    html = `
+                        <h1 class="mb-4">Welcome</h1>
+                        <p>Use the navigation to manage customer data efficiently.</p>
+                        <div class="search-container">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search all customer data...">
+                            <button class="btn btn-primary mt-2" onclick="searchAllData()">Search</button>
+                            <button class="btn btn-secondary mt-2" onclick="clearSearch()">Clear</button>
+                        </div>
+                        <div id="searchResults" class="mt-4"></div>
+                    `;
+                    break;
+                case 'masterList':
+                    html = `
+                        <h2 class="mb-4">MASTER LIST Customer Data</h2>
+                        <div class="mb-3">
+                            <input type="file" id="fileInputMASTER LIST" accept=".xlsx, .xls, .xlsm, .xlsb, .csv, .ods" class="form-control">
+                            <button class="btn btn-primary mt-2" onclick="importData('MASTER LIST')">Import Data</button>
+                            <button class="btn btn-danger mt-2" onclick="showDeleteConfirmation('MASTER LIST')">Delete All Data</button>
+                        </div>
+                        <div id="dataContainerMASTER LIST"></div>
+                    `;
+                    break;
+                case 'about':
+                    html = `
+                        <h2>About Customer Data Management</h2>
+                        <p>This application allows you to manage customer data for the MASTER LIST. You can import data from Excel files, search through the data, and delete data as needed, Powered by Falendra Sahu</p>
+                    `;
+                    break;
+            }
+
+            content.innerHTML = html;
+            setTimeout(() => content.classList.add('fade-in'), 10);
+
+            if (section === 'masterList') {
+                displayData('MASTER LIST');
+            }
+        }
+
+        async function importData(year) {
+            const fileInput = document.getElementById(`fileInput${year}`);
+            const file = fileInput.files[0];
+            if (file) {
+                showLoading();
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const data = new Uint8Array(arrayBuffer);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    const sheetName = workbook.SheetNames.find(name => name.toLowerCase() === "master list") || workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    
+                    if (!sheet) {
+                        throw new Error('Unable to find the "MASTER LIST" sheet or any valid sheet in the file.');
+                    }
+
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, {header: columns});
+                    
+                    customerData[year] = jsonData.slice(1); // Remove header row
+
+                    await new Promise(resolve => setTimeout(resolve, 0)); // Allow UI to update
+                    displayData(year);
+                    showFloatingMessage(`Data imported successfully for ${year} from the "${sheetName}" sheet`);
+                } catch (error) {
+                    showFloatingMessage('Error importing data: ' + error.message, 5000);
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                showFloatingMessage('Please select a file to import.');
+            }
+        }
+
+        function showDeleteConfirmation(year) {
+            const dialog = document.getElementById('confirmationDialog');
+            const confirmationYear = document.getElementById('confirmationYear');
+            const confirmButton = document.getElementById('confirmDelete');
+            const cancelButton = document.getElementById('cancelDelete');
+
+            confirmationYear.textContent = year;
+            dialog.classList.add('show');
+
+            confirmButton.onclick = () => {
+                deleteData(year);
+                dialog.classList.remove('show');
+            };
+
+            cancelButton.onclick = () => {
+                dialog.classList.remove('show');
+            };
+        }
+
+        function deleteData(year) {
+            customerData[year] = [];
+            displayData(year);
+            showFloatingMessage(`All data for ${year} has been deleted.`);
+        }
+
+        function displayData(year) {
+            const container = document.getElementById(`dataContainer${year}`);
+            if (customerData[year].length === 0) {
+                container.innerHTML = '<p>No data available, import data to see</p>';
+                return;
+            }
+
+            const pageSize = 20;
+            const totalPages = Math.ceil(customerData[year].length / pageSize);
+
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p>Total records: ${customerData[year].length}</p>
+                    <div>
+                        <label for="pageSelect${year}">Page:</label>
+                        <select id="pageSelect${year}" class="form-select d-inline-block w-auto" onchange="changePage('${year}')">
+                            ${Array.from({length: totalPages}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div id="cardContainer${year}" class="row"></div>
+            `;
+
+            container.innerHTML = html;
+            changePage(year);
+        }
+
+        function changePage(year) {
+            const pageSelect = document.getElementById(`pageSelect${year}`);
+            const currentPage = parseInt(pageSelect.value);
+            const pageSize = 20;
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const cardContainer = document.getElementById(`cardContainer${year}`);
+
+            const pageData = customerData[year].slice(startIndex, endIndex);
+            
+            let html = '';
+            pageData.forEach(item => {
+                html += `
+                    <div class="col-md-6 col-lg-3">
+                        <div class="customer-card">
+                            <h5>${item['NAME'] || 'N/A'}</h5>
+                            ${columns.map(column => {
+                                let value = item[column] || 'N/A';
+                                if (["DUE DATE", "OPENED ON", "MATURITY DATE"].includes(column)) {
+                                    value = formatExcelDate(value);
+                                }
+                                return `<p><strong>${column}:</strong> ${value}</p>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            cardContainer.innerHTML = html;
+        }
+
+        function formatExcelDate(excelDate) {
+            if (!excelDate || isNaN(excelDate)) return 'N/A';
+            
+            const date = new Date((excelDate - 25569) * 86400 * 1000);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            
+            return `${day}-${month}-${year}`;
+        }
+
+        async function searchAllData() {
+            showLoading();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchResults = document.getElementById('searchResults');
+            let html = '';
+            let totalResults = 0;
+
+            try {
+                const year = 'MASTER LIST';
+                const filteredData = customerData[year].filter(item => 
+                    Object.values(item).some(value => 
+                        value && value.toString().toLowerCase().includes(searchTerm)
+                    )
+                );
+
+                totalResults += filteredData.length;
+
+                if (filteredData.length > 0) {
+                    html += `<h3>${year} Results</h3>`;
+                    html += '<div class="row">';
+
+                    filteredData.slice(0, 20).forEach(item => {
+                        html += `
+                            <div class="col-md-6 col-lg-3">
+                                <div class="customer-card">
+                                    <h5>${item['NAME'] || 'N/A'}</h5>
+                                    ${columns.map(column => {
+                                        let value = item[column] || 'N/A';
+                                        if (["DUE DATE", "OPENED ON", "MATURITY DATE"].includes(column)) {
+                                            value = formatExcelDate(value);
+                                        }
+                                        return `<p><strong>${column}:</strong> ${value}</p>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    if (filteredData.length > 20) {
+                        html += `<p>Showing first 20 results out of ${filteredData.length}</p>`;
+                    }
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 0)); // Allow UI to update
+
+                if (html === '') {
+                    searchResults.innerHTML = '<p>No matching data found.</p>';
+                } else {
+                    searchResults.innerHTML = `<p>Total records found: ${totalResults}</p>` + html;
+                }
+            } catch (error) {
+                console.error('Error during search:', error);
+                searchResults.innerHTML = '<p>An error occurred during the search. Please try again.</p>';
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+
+        function setActiveNavItem(section) {
+            document.querySelectorAll('.sidebar a, .mobile-navbar a').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${section}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Initial load
+        loadContent('home');
+        setActiveNavItem('home');
+
+        // Navigation event listeners for both sidebar and mobile navbar
+        document.querySelectorAll('.sidebar a, .mobile-navbar a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = e.target.closest('a').getAttribute('href').substring(1);
+                setActiveNavItem(section);
+                loadContent(section);
+            });
+        });
+    </script>
+</body>
+</html>
