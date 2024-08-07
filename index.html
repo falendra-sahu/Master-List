@@ -12,7 +12,7 @@
     <style>
         :root {
             --primary-color: #6a5acd;
-            --secondary-color: #2b2d42;
+            --secondary-color: #000000;
             --background-color: #edf2f4;
             --text-color: #3a3a3a;
             --hover-color: #5a5e93;
@@ -306,7 +306,7 @@
 
         const columns = [
             "SR NO", "ACCOUNT NO", "NAME", "DENOMINATION", "PAID UPTO", "DUE DATE", "OPENED ON",
-            "MATURITY DATE", "TOTAL", "GUARDIAN", "ADDRESS", "ASLAAS No", "CIF N", "CODE"
+            "MATURITY DATE", "BALANCE", "GUARDIAN", "ADDRESS", "ASLAAS NO", "CIF NO", "CODE"
         ];
 
         function showLoading() {
@@ -351,8 +351,8 @@
                         <h2 class="mb-4">MASTER LIST Customer Data</h2>
                         <div class="mb-3">
                             <input type="file" id="fileInputMASTER LIST" accept=".xlsx, .xls, .xlsm, .xlsb, .csv, .ods" class="form-control">
-                            <button class="btn btn-primary mt-2" onclick="importData('MASTER LIST')">Import Data</button>
-                            <button class="btn btn-danger mt-2" onclick="showDeleteConfirmation('MASTER LIST')">Delete All Data</button>
+                            <button class="btn btn-primary mt-2" onclick="importData('MASTER LIST')">Import</button>
+                            <button class="btn btn-danger mt-2" onclick="showDeleteConfirmation('MASTER LIST')">Delete</button>
                         </div>
                         <div id="dataContainerMASTER LIST"></div>
                     `;
@@ -435,7 +435,7 @@
         function displayData(year) {
             const container = document.getElementById(`dataContainer${year}`);
             if (customerData[year].length === 0) {
-                container.innerHTML = '<p>No data available, import data to see</p>';
+                container.innerHTML = '<p>No data available, import data to see.</p>';
                 return;
             }
 
